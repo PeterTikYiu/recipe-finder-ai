@@ -1,0 +1,25 @@
+{
+  "short_name": "RecipeAI",
+  "name": "Recipe Finder + AI Calorie Calculator",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#f3760a",
+  "background_color": "#ffffff",
+  "description": "A smart recipe finder and AI-powered calorie calculator.",
+  "scope": "/",
+  "orientation": "portrait-primary"
+}
