@@ -1,12 +1,11 @@
-import React, { useState, useCallback } from 'react';
-import { BrainCircuit, Sparkles, BarChart, Sliders, AlertTriangle, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { BrainCircuit, BarChart, AlertTriangle, Info } from 'lucide-react';
 import mockAIService from '../services/aiService';
-import { cn } from '../utils/helpers';
 import NutritionSkeleton from '../components/common/NutritionSkeleton';
 
 const Calculator = () => {
   const [ingredients, setIngredients] = useState('');
-  const [servings, setServings] = useState(1);
+  const [servings, _setServings] = useState(1);
   const [nutrition, setNutrition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -23,17 +22,12 @@ const Calculator = () => {
       const result = await mockAIService.getNutritionAnalysis(ingredients);
       setNutrition(result);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Could not calculate nutrition. Please check the ingredients and try again.');
       setNutrition(null);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleServingsChange = (e) => {
-    const value = Math.max(1, Math.min(10, Number(e.target.value)));
-    setServings(value);
   };
 
   const perServing = (value) => {

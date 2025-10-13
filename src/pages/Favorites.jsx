@@ -4,7 +4,8 @@ import { Heart, Frown, ListFilter, Trash2 } from 'lucide-react';
 import storageService from '../services/storageService';
 import RecipeCard from '../components/common/RecipeCard';
 import RecipeModal from '../components/common/RecipeModal';
-import mockRecipeService from '../services/recipeService';
+import { motion } from 'framer-motion';
+import mealDb from '../services/theMealDbService.js';
 
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
@@ -12,8 +13,8 @@ const Favorites = () => {
   const [sortOrder, setSortOrder] = useState('addedAt_desc');
   const [filter, setFilter] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  // local loading and error not displayed currently
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +46,21 @@ const Favorites = () => {
     });
 
     setSortedFavorites(favs);
+    setPage(1);
   }, [favorites, sortOrder, filter]);
+
+  // Infinite scroll: increase page when near bottom
+  useEffect(() => {
+    function handleScroll() {
+      const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+      const canGrow = page * 12 < sortedFavorites.length;
+      if (nearBottom && canGrow) {
+        setPage((p) => (p * 12 < sortedFavorites.length ? p + 1 : p));
+      }
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [page, sortedFavorites.length]);
 
   const handleToggleFavorite = (recipe) => {
     storageService.removeFromFavorites(recipe.id);
@@ -56,14 +71,12 @@ const Favorites = () => {
   };
 
   const handleRecipeSelect = async (recipe) => {
-    setLoading(true);
+    setSelectedRecipe(recipe);
     try {
-      const details = await mockRecipeService.getRecipeDetails(recipe.id);
+      const details = await mealDb.getMealDetails(recipe.id, recipe);
       setSelectedRecipe(details);
-    } catch (error) {
-      setError('Could not load recipe details.');
-    } finally {
-      setLoading(false);
+    } catch {
+      // ignore fetch errors for details in favorites
     }
   };
 
@@ -117,14 +130,21 @@ const Favorites = () => {
 
           {sortedFavorites.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedFavorites.map((recipe) => (
-                <RecipeCard
+              {sortedFavorites.slice(0, Math.min(page * 12, sortedFavorites.length)).map((recipe) => (
+                <motion.div
                   key={recipe.id}
-                  recipe={recipe}
-                  onSelect={() => handleRecipeSelect(recipe)}
-                  onToggleFavorite={handleToggleFavorite}
-                  isFavorite={true}
-                />
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                >
+                  <RecipeCard
+                    recipe={recipe}
+                    onSelect={() => handleRecipeSelect(recipe)}
+                    onToggleFavorite={() => handleToggleFavorite(recipe)}
+                    isFavorite={true}
+                  />
+                </motion.div>
               ))}
             </div>
           ) : (
@@ -153,6 +173,15 @@ const Favorites = () => {
         onToggleFavorite={handleToggleFavorite}
         isFavorite={selectedRecipe && favorites.some(f => f.id === selectedRecipe.id)}
       />
+      {sortedFavorites.length > page * 12 ? (
+        <div className="mt-8 flex justify-center">
+          <button className="btn-secondary" onClick={() => setPage((p) => (p * 12 < sortedFavorites.length ? p + 1 : p))}>
+            Next Page
+          </button>
+        </div>
+      ) : sortedFavorites.length > 0 ? (
+        <div className="mt-8 text-center text-gray-500">End of results</div>
+      ) : null}
     </div>
   );
 };

@@ -1,30 +1,32 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, Calculator, Menu, X, UtensilsCrossed } from 'lucide-react';
+import { Home, Heart, Calculator, Menu, X, UtensilsCrossed, Star, User } from 'lucide-react';
 import { cn } from '../../utils/helpers';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/favorites', label: 'Favorites', icon: Heart },
   { to: '/calculator', label: 'AI Calculator', icon: Calculator },
+  { to: '/recommended', label: 'Recommended', icon: Star },
+  { to: '/profile', label: 'Profile', icon: User },
 ];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const NavLinkItem = ({ to, label, icon: Icon, onClick }) => (
+  const NavLinkItem = (props) => (
     <NavLink
-      to={to}
+      to={props.to}
       className={({ isActive }) =>
         cn(
           'nav-link',
           isActive ? 'active' : ''
         )
       }
-      onClick={onClick}
+      onClick={props.onClick}
     >
-      <Icon className="h-5 w-5" />
-      <span className="hidden md:inline">{label}</span>
+      <props.icon className="h-5 w-5" />
+      <span className="hidden md:inline">{props.label}</span>
     </NavLink>
   );
 

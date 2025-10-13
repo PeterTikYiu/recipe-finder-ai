@@ -7,10 +7,12 @@ class StorageService {
   constructor() {
     this.storageKeys = {
       RECIPES_CACHE: 'recipes_cache',
+      RECIPE_DETAILS_CACHE: 'recipe_details_cache',
       FAVORITES: 'user_favorites',
       SEARCH_HISTORY: 'search_history',
       USER_PREFERENCES: 'user_preferences',
       NUTRITION_CACHE: 'nutrition_cache',
+      MEALDB_CALORIES_CACHE: 'mealdb_calories_cache',
       APP_VERSION: 'app_version'
     };
     
@@ -61,8 +63,8 @@ class StorageService {
     try {
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : null;
-    } catch (error) {
-      console.error(`Error reading from localStorage (${key}):`, error);
+    } catch {
+      console.error(`Error reading from localStorage (${key}):`);
       return null;
     }
   }
@@ -74,8 +76,8 @@ class StorageService {
     try {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
-    } catch (error) {
-      console.error(`Error writing to localStorage (${key}):`, error);
+    } catch {
+      console.error(`Error writing to localStorage (${key}):`);
       return false;
     }
   }
@@ -87,8 +89,8 @@ class StorageService {
     try {
       localStorage.removeItem(key);
       return true;
-    } catch (error) {
-      console.error(`Error removing from localStorage (${key}):`, error);
+    } catch {
+      console.error(`Error removing from localStorage (${key}):`);
       return false;
     }
   }
@@ -330,6 +332,19 @@ class StorageService {
     }
   }
 
+  // ==================== MEALDB CALORIES CACHE ====================
+
+  getMealDbCalories(mealId) {
+    const cache = this.getItem(this.storageKeys.MEALDB_CALORIES_CACHE) || {};
+    return cache[String(mealId)] ?? null;
+  }
+
+  setMealDbCalories(mealId, calories) {
+    const cache = this.getItem(this.storageKeys.MEALDB_CALORIES_CACHE) || {};
+    cache[String(mealId)] = calories;
+    this.setItem(this.storageKeys.MEALDB_CALORIES_CACHE, cache);
+  }
+
   /**
    * Get cached nutrition analysis
    */
@@ -346,6 +361,49 @@ class StorageService {
       }
     }
     
+    return null;
+  }
+
+  // ==================== RECIPE DETAILS CACHE ====================
+
+  /**
+   * Cache detailed recipe information by ID
+   * @param {number|string} recipeId
+   * @param {object} details
+   */
+  cacheRecipeDetails(recipeId, details) {
+    const cache = this.getItem(this.storageKeys.RECIPE_DETAILS_CACHE) || {};
+    cache[recipeId] = {
+      details,
+      timestamp: Date.now(),
+    };
+
+    // Cap cache size to last 200 entries
+    const entries = Object.entries(cache);
+    if (entries.length > 200) {
+      const sorted = entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+      const trimmed = Object.fromEntries(sorted.slice(0, 200));
+      this.setItem(this.storageKeys.RECIPE_DETAILS_CACHE, trimmed);
+    } else {
+      this.setItem(this.storageKeys.RECIPE_DETAILS_CACHE, cache);
+    }
+  }
+
+  /**
+   * Get cached recipe details if fresh
+   * @param {number|string} recipeId
+   * @param {number} ttlHours - time-to-live in hours (default 24h)
+   * @returns {object|null}
+   */
+  getCachedRecipeDetails(recipeId, ttlHours = 24) {
+    const cache = this.getItem(this.storageKeys.RECIPE_DETAILS_CACHE) || {};
+    const entry = cache[recipeId];
+    if (!entry) return null;
+
+    const ageInHours = (Date.now() - entry.timestamp) / (1000 * 60 * 60);
+    if (ageInHours < ttlHours) {
+      return entry.details;
+    }
     return null;
   }
 
@@ -376,6 +434,25 @@ class StorageService {
       totalSizeFormatted: this.formatBytes(totalSize),
       available: this.getAvailableStorage()
     };
+  }
+
+  // ==================== ANALYTICS ====================
+
+  incrementRecipeAccessCount(recipeId) {
+    const key = 'recipe_access_counts';
+    const counts = this.getItem(key) || {};
+    counts[recipeId] = (counts[recipeId] || 0) + 1;
+    this.setItem(key, counts);
+    return counts[recipeId];
+  }
+
+  getTopAccessedRecipes(limit = 20) {
+    const key = 'recipe_access_counts';
+    const counts = this.getItem(key) || {};
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id, count]) => ({ id, count }));
   }
 
   /**
@@ -409,13 +486,13 @@ class StorageService {
           localStorage.removeItem(testKey);
           lastGoodSize = testSize;
           testSize *= 2;
-        } catch (e) {
+        } catch {
           break;
         }
       }
       
       return this.formatBytes(lastGoodSize);
-    } catch (error) {
+    } catch {
       return 'Unknown';
     }
   }
@@ -465,8 +542,8 @@ class StorageService {
       });
       
       return true;
-    } catch (error) {
-      console.error('Data import failed:', error);
+    } catch {
+      console.error('Data import failed');
       return false;
     }
   }

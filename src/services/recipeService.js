@@ -3,7 +3,6 @@
  * Provides realistic recipe data for development without API keys
  */
 
-import { generateId } from '../utils/helpers.js';
 import storageService from './storageService.js';
 
 class MockRecipeService {

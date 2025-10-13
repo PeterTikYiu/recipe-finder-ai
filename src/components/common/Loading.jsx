@@ -1,3 +1,4 @@
+/* eslint react-refresh/only-export-components: 0 */
 import React, { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -26,9 +27,10 @@ const FullPageLoader = () => {
   );
 };
 
-export const withSuspense = (Component) => (props) => (
+// eslint-disable-next-line no-unused-vars
+export const withSuspense = (WrappedComponent) => (props) => (
   <Suspense fallback={<FullPageLoader />}>
-    <Component {...props} />
+    <WrappedComponent {...props} />
   </Suspense>
 );
 

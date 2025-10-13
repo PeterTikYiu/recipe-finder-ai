@@ -215,3 +215,39 @@ This project is open-source for educational and portfolio purposes.
 
 ---
 
+
+## 🚀 Quickstart (Local Dev)
+
+1) Install dependencies
+
+```powershell
+npm install
+```
+
+2) Configure environment variables
+- Copy `.env.example` to `.env` and fill in values
+- Only the Spoonacular key is required to search recipes
+- Firebase is optional; if omitted or invalid, auth is disabled gracefully
+
+```
+VITE_SPOONACULAR_API_KEY=your_spoonacular_key
+# Optional Firebase (for Google Sign-In)
+VITE_FIREBASE_API_KEY=... 
+VITE_FIREBASE_AUTH_DOMAIN=... 
+VITE_FIREBASE_PROJECT_ID=... 
+VITE_FIREBASE_APP_ID=... 
+```
+
+3) Start the dev server
+
+```powershell
+npm run dev
+```
+
+Open the printed Local URL (e.g., http://localhost:5173 or 5174) in your browser.
+
+Troubleshooting
+- White screen with Firebase errors → check your .env; if you don’t need auth, leave Firebase vars empty and the app will run with auth disabled
+- 401/403 from Spoonacular → verify `VITE_SPOONACULAR_API_KEY`
+- Port in use → Vite will pick another port automatically
+

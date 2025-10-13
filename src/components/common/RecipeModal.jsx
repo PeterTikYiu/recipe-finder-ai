@@ -1,7 +1,8 @@
+/* eslint no-unused-vars: 0 */
 import React, { useEffect } from 'react';
 import { X, Clock, Users, Leaf, Flame, Star, Heart, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatCookingTime, capitalizeWords } from '../../utils/helpers';
+import { formatCookingTime, capitalizeWords, estimateCookingTimeFromInstructions } from '../../utils/helpers';
 
 const RecipeModal = ({ recipe, onClose, onToggleFavorite, isFavorite }) => {
   useEffect(() => {
@@ -24,10 +25,21 @@ const RecipeModal = ({ recipe, onClose, onToggleFavorite, isFavorite }) => {
   };
 
   const modalVariants = {
-    hidden: { y: "-50%", x: "-50%", opacity: 0, scale: 0.9 },
-    visible: { y: "-50%", x: "-50%", opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } },
+    hidden: { y: "-50%", x: "-50%", opacity: 0, scale: 0.96 },
+    visible: { y: "-50%", x: "-50%", opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+    exit: { opacity: 0, scale: 0.96, transition: { duration: 0.3, ease: 'easeIn' } },
   };
+
+  // Estimate cooking time if missing
+  let displayTime = recipe.readyInMinutes;
+  if (!displayTime && recipe.source === 'mealdb') {
+    // Try to estimate from instructions
+    const instructionsText = Array.isArray(recipe.analyzedInstructions)
+      ? recipe.analyzedInstructions.map(i => i.steps?.map(s => s.step).join(' ')).join(' ')
+      : '';
+    const est = estimateCookingTimeFromInstructions(instructionsText);
+    if (est) displayTime = est;
+  }
 
   return (
     <AnimatePresence>
@@ -57,11 +69,24 @@ const RecipeModal = ({ recipe, onClose, onToggleFavorite, isFavorite }) => {
 
           <div className="flex-grow overflow-y-auto p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
-              <InfoChip icon={Clock} label="Time" value={formatCookingTime(recipe.readyInMinutes)} />
-              <InfoChip icon={Users} label="Servings" value={recipe.servings} />
-              <InfoChip icon={Flame} label="Calories" value={recipe.nutrition?.calories} unit="kcal" />
-              <InfoChip icon={Zap} label="Health Score" value={recipe.healthScore} />
+              {displayTime && displayTime !== 'N/A' && (
+                <InfoChip icon={Clock} label="Time" value={formatCookingTime(displayTime)} />
+              )}
+              {recipe.servings && recipe.servings !== 'N/A' && (
+                <InfoChip icon={Users} label="Servings" value={recipe.servings} />
+              )}
+              {recipe.nutrition?.calories && recipe.nutrition.calories !== 'N/A' && (
+                <InfoChip icon={Flame} label="Calories" value={recipe.nutrition.calories} unit="kcal" />
+              )}
+              {recipe.healthScore && recipe.healthScore !== 'N/A' && (
+                <InfoChip icon={Zap} label="Health Score" value={recipe.healthScore} />
+              )}
             </div>
+            {(!displayTime || displayTime === 'N/A') && (!recipe.servings || recipe.servings === 'N/A') && (!recipe.nutrition?.calories || recipe.nutrition.calories === 'N/A') && (!recipe.healthScore || recipe.healthScore === 'N/A') && (
+              <div className="mb-6 text-center text-gray-500 text-sm bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                Full details are unavailable for this recipe. Try searching by name for more info.
+              </div>
+            )}
 
             <div className="mb-6">
               <h3 className="font-bold text-lg text-gray-800 mb-2">Summary</h3>

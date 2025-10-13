@@ -59,7 +59,7 @@ class MockAIService {
       const base = this.findBaseIngredient(ingredient);
 
       if (base) {
-        const multiplier = this.getMultiplier(quantity, unit, ingredient, base);
+  const multiplier = this.getMultiplier(quantity, unit, ingredient);
         totalNutrition.calories += base.calories * multiplier;
         totalNutrition.protein += base.protein * multiplier;
         totalNutrition.fat += base.fat * multiplier;
@@ -138,7 +138,7 @@ class MockAIService {
   /**
    * Estimate multiplier based on quantity and unit
    */
-  getMultiplier(quantity, unit, ingredient, base) {
+  getMultiplier(quantity, unit, ingredient) {
     // Weight-based multiplier (assuming base is per 100g)
     const weightUnits = {
       'g': 0.01, 'gram': 0.01, 'grams': 0.01,
